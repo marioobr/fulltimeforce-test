@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CommitService } from './commit.service';
+import { CommitParams } from './Dto/CommitParams.dto';
 
 @Controller('commits')
 export class CommitController {
@@ -9,7 +10,11 @@ export class CommitController {
   async getCommits(
     @Param('repoName') repoName: string,
     @Param('userName') userName: string,
+    @Query() query?: CommitParams,
   ) {
+    if (query) {
+      return await this.commitService.getCommits(userName, repoName, query);
+    }
     return await this.commitService.getCommits(userName, repoName);
   }
 

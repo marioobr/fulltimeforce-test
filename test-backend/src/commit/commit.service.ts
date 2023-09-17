@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosRequestConfig } from 'axios';
 import { firstValueFrom, catchError } from 'rxjs';
 import { Commit } from './Dto/Commit.dto';
 import { ResponseDto } from 'src/utils/Response.Dto';
@@ -13,22 +13,26 @@ export class CommitService {
   private githubHost = process.env.GITHUBHOST;
   private githubToken = process.env.GITHUBTOKEN;
 
-  async getCommits(userName: string, repoName: string): Promise<ResponseDto> {
+  async getCommits(
+    userName: string,
+    repoName: string,
+    params?: Record<string, any>,
+  ): Promise<ResponseDto> {
     const commitsEndpoint = `${this.githubHost}/repos/${userName}/${repoName}/commits`;
+    const config: AxiosRequestConfig = {
+      params: params ?? {},
+      headers: {
+        'Content-Type': 'application/vnd.github+json',
+        Authorization: `Bearer ${this.githubToken}`,
+      },
+    };
     const { data, status, statusText } = await firstValueFrom(
-      this.httpService
-        .get<any[]>(commitsEndpoint, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.githubToken}`,
-          },
-        })
-        .pipe(
-          catchError((error: AxiosError) => {
-            this.logger.error(error.response?.data);
-            throw new BadRequestException(error.response?.data);
-          }),
-        ),
+      this.httpService.get<any[]>(commitsEndpoint, config).pipe(
+        catchError((error: AxiosError) => {
+          this.logger.error(error.response?.data);
+          throw new BadRequestException(error.response?.data);
+        }),
+      ),
     );
 
     const commits: Commit[] = this.parseToCommit(data) as Commit[];
@@ -47,7 +51,7 @@ export class CommitService {
       this.httpService
         .get<any[]>(commitsUrl, {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/vnd.github+json',
             Authorization: `Bearer ${this.githubToken}`,
           },
         })
@@ -80,7 +84,7 @@ export class CommitService {
       this.httpService
         .get<any>(commitsEndpoint, {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/vnd.github+json',
             Authorization: `Bearer ${this.githubToken}`,
           },
         })
@@ -108,7 +112,7 @@ export class CommitService {
       this.httpService
         .get<any>(commitUrl, {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/vnd.github+json',
             Authorization: `Bearer ${this.githubToken}`,
           },
         })
@@ -131,7 +135,7 @@ export class CommitService {
     return response;
   }
 
-  private parseToCommit(data: any | any[]): Commit | Commit[] {
+  parseToCommit(data: any | any[]): Commit | Commit[] {
     const commits: Commit[] = [];
 
     if (data instanceof Array) {

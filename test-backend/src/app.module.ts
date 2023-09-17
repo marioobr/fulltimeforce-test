@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { HttpModule } from '@nestjs/axios/dist/http.module';
 import { CommitController } from './commit/commit.controller';
 import { CommitService } from './commit/commit.service';
+import { BranchController } from './branch/branch.controller';
+import { BranchService } from './branch/branch.service';
 
 @Module({
   imports: [
@@ -19,7 +21,12 @@ import { CommitService } from './commit/commit.service';
       isGlobal: true,
     }),
   ],
-  controllers: [AuthController, RepositoryController, CommitController],
-  providers: [AuthService, RepositoryService, CommitService],
+  controllers: [
+    AuthController,
+    RepositoryController,
+    CommitController,
+    BranchController,
+  ],
+  providers: [AuthService, RepositoryService, CommitService, BranchService],
 })
 export class AppModule {}
