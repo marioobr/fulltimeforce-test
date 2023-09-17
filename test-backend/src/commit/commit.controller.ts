@@ -12,6 +12,7 @@ export class CommitController {
   ) {
     return await this.commitService.getCommits(userName, repoName);
   }
+
   @Get(':userName/:repoName/:commitSha')
   async getCommit(
     @Param('userName') userName: string,
@@ -25,6 +26,7 @@ export class CommitController {
   async getCommistByUrl(@Param('commitsUrl') commitsUrl: string) {
     return await this.commitService.getCommitsByUrl(commitsUrl);
   }
+
   @Get(':commitUrl')
   async getCommitByUrl(@Param('commitUrl') commitUrl: string) {
     return await this.commitService.getCommitByUrl(commitUrl);

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Repository } from './Dto/repository.dto';
 import { HttpService } from '@nestjs/axios/dist';
 import { firstValueFrom, catchError } from 'rxjs';
@@ -7,22 +7,17 @@ import { ResponseDto } from 'src/utils/Response.Dto';
 
 @Injectable()
 export class RepositoryService {
-  private readonly repositories: Repository[] = [];
-  private githubHost?: string;
-  private githubToken?: string;
-  private reposPath?: string;
-  private reposEndPoint?: string;
+  private readonly logger = new Logger(RepositoryService.name);
+  private githubHost = process.env.GITHUBHOST;
+  private githubToken = process.env.GITHUBTOKEN;
 
-  constructor(private readonly httpService: HttpService) {
-    this.githubToken = process.env.GITHUBTOKEN;
-    this.githubHost = process.env.GITHUBHOST;
-    this.reposPath = '/repos';
-  }
+  constructor(private readonly httpService: HttpService) {}
+
   async GetRepositories(userName: string): Promise<ResponseDto> {
-    this.reposEndPoint = `${this.githubHost}users/${userName}${this.reposPath}`;
+    const reposEndPoint = `${this.githubHost}/users/${userName}/repos`;
     const { data, status, statusText } = await firstValueFrom(
       this.httpService
-        .get(this.reposEndPoint, {
+        .get(reposEndPoint, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${this.githubToken}`,
@@ -30,42 +25,33 @@ export class RepositoryService {
         })
         .pipe(
           catchError((error: AxiosError) => {
-            throw error.response?.data;
+            this.logger.error(error.response?.data);
+            throw new BadRequestException(error.response?.data);
           }),
         ),
     );
 
-    data.forEach((data: any) => {
-      const repository: Repository = {
-        id: data.id,
-        name: data.name,
-        fullName: data.full_name,
-        description: data.description,
-        url: data.url,
-        private: data.private,
-        branchesUrl: data.branches_url,
-        commentsUrl: data.comments_url,
-        commitsUrl: data.commits_url,
-      };
-      this.repositories.push(repository);
-    });
+    const repositories: Repository[] = this.parseToRepository(
+      data,
+    ) as Repository[];
 
     const response: ResponseDto = {
       statusCode: status,
-      body: this.repositories,
+      body: repositories,
       message: statusText,
     };
 
     return response;
   }
+
   async GetRepository(
     userName: string,
     repoName: string,
   ): Promise<ResponseDto> {
-    this.reposEndPoint = `${this.githubHost}repos/${userName}/${repoName}`;
+    const repoEndPoint = `${this.githubHost}/repos/${userName}/${repoName}`;
     const { data, status, statusText } = await firstValueFrom(
       this.httpService
-        .get(this.reposEndPoint, {
+        .get(repoEndPoint, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${this.githubToken}`,
@@ -73,12 +59,45 @@ export class RepositoryService {
         })
         .pipe(
           catchError((error: AxiosError) => {
-            throw error.response?.data;
+            this.logger.error(error.response?.data);
+            throw new BadRequestException(error.response?.data);
           }),
         ),
     );
 
-    const repository: Repository = {
+    const repository: Repository = this.parseToRepository(data) as Repository;
+
+    const response: ResponseDto = {
+      statusCode: status,
+      body: repository,
+      message: statusText,
+    };
+
+    return response;
+  }
+
+  private parseToRepository(data: any | any[]): Repository | Repository[] {
+    const repositories: Repository[] = [];
+
+    if (data instanceof Array) {
+      data.forEach((data) => {
+        const repository: Repository = {
+          id: data.id,
+          name: data.name,
+          fullName: data.full_name,
+          description: data.description,
+          url: data.url,
+          private: data.private,
+          branchesUrl: data.branches_url,
+          commentsUrl: data.comments_url,
+          commitsUrl: data.commits_url,
+        };
+        repositories.push(repository);
+      });
+      return repositories;
+    }
+
+    return {
       id: data.id,
       name: data.name,
       fullName: data.full_name,
@@ -89,13 +108,5 @@ export class RepositoryService {
       commentsUrl: data.comments_url,
       commitsUrl: data.commits_url,
     };
-
-    const response: ResponseDto = {
-      statusCode: status,
-      body: repository,
-      message: statusText,
-    };
-
-    return response;
   }
 }

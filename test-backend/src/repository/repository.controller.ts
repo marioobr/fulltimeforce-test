@@ -9,6 +9,7 @@ export class RepositoryController {
   async GetRepositories(@Param('userName') userName: string) {
     return await this.repositoryService.GetRepositories(userName);
   }
+
   @Get(':userName/:repoName')
   async GetRepository(
     @Param('userName') userName: string,

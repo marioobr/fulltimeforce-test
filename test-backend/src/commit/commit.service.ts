@@ -12,6 +12,7 @@ export class CommitService {
 
   private githubHost = process.env.GITHUBHOST;
   private githubToken = process.env.GITHUBTOKEN;
+
   async getCommits(userName: string, repoName: string): Promise<ResponseDto> {
     const commitsEndpoint = `${this.githubHost}/repos/${userName}/${repoName}/commits`;
     const { data, status, statusText } = await firstValueFrom(
@@ -19,7 +20,7 @@ export class CommitService {
         .get<any[]>(commitsEndpoint, {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.githubToken}222`,
+            Authorization: `Bearer ${this.githubToken}`,
           },
         })
         .pipe(
@@ -40,6 +41,7 @@ export class CommitService {
 
     return response;
   }
+
   async getCommitsByUrl(commitsUrl: string): Promise<ResponseDto> {
     const { data, status, statusText } = await firstValueFrom(
       this.httpService
@@ -67,6 +69,7 @@ export class CommitService {
 
     return response;
   }
+
   async getCommit(
     userName: string,
     repoName: string,
@@ -99,6 +102,7 @@ export class CommitService {
 
     return response;
   }
+
   async getCommitByUrl(commitUrl: string): Promise<ResponseDto> {
     const { data, status, statusText } = await firstValueFrom(
       this.httpService
@@ -129,6 +133,7 @@ export class CommitService {
 
   private parseToCommit(data: any | any[]): Commit | Commit[] {
     const commits: Commit[] = [];
+
     if (data instanceof Array) {
       data.forEach((data) => {
         const commit: Commit = {
@@ -141,8 +146,10 @@ export class CommitService {
         };
         commits.push(commit);
       });
+
       return commits;
     }
+
     return {
       sha: data.sha,
       url: data.url,
